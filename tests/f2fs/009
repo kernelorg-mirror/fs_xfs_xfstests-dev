@@ -106,10 +106,14 @@ check_links 0 0
 touch $filename
 ino=`stat -c '%i' $filename`
 $F2FS_IO_PROG write 1 0 1 zero atomic_commit $filename 5000 >> $seqres.full 2>&1 &
+pid=$!
+sleep 2
 stat $filename >> $seqres.full
 rm $filename
 _scratch_shutdown -f
-sleep 6
+sleep 4
+kill $pid &> /dev/null
+wait $pid &> /dev/null
 check_links 1 0 $ino
 
 # hardlink
