@@ -176,7 +176,7 @@ _mread()
 	local file=$1
 	local offset=$2
 	local length=$3
-	local map_len=${4:-$(_round_up_to_page_boundary $(_get_filesize $file)) }
+	local map_len=${4:-$(_round_up_to_page_boundary $(_get_filesize $file))}
 
 	# Some callers expect xfs_io to crash with SIGBUS due to the mread,
 	# causing the shell to print "Bus error" to stderr.  To allow this
