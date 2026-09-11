@@ -59,9 +59,19 @@ _get_scsi_debug_dev()
 		let physical=physical/2
 		let phys_exp=phys_exp+1
 	done
-	opts="sector_size=$logical physblk_exp=$phys_exp lowest_aligned=$unaligned dev_size_mb=$size $@"
-	echo "scsi_debug options $opts" >> $seqres.full
-	modprobe scsi_debug $opts
+
+	local opts=(
+		"sector_size=$logical"
+		"physblk_exp=$phys_exp"
+		"lowest_aligned=$unaligned"
+		"dev_size_mb=$size"
+		"delay=0"
+		"clustering=1"
+	)
+	opts+=("$@")
+
+	echo "scsi_debug options ${opts[*]}" >> $seqres.full
+	modprobe scsi_debug "${opts[@]}"
 	[ $? -eq 0 ] || _fail "scsi_debug modprobe failed"
 	$UDEV_SETTLE_PROG
 	device=`grep -wl scsi_debug /sys/block/sd*/device/model | awk -F / '{print $4}'`
