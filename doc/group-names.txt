@@ -137,6 +137,7 @@ tape			dump and restore with a tape
 tempfsid		temporary fsid
 thin			thin provisioning
 trim			FITRIM ioctl
+pi			Protection Information
 udf			UDF functionality tests
 union			tests from the unionmount test suite
 unlink			O_TMPFILE unlinked files
