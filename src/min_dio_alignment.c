@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (c) 2024 Christoph Hellwig
+ * Copyright (c) 2024,2026 Christoph Hellwig
  */
 #include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <sys/mount.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include "statx.h"
 
-static int min_dio_alignment(const char *mntpnt, const char *devname)
+static int min_dio_alignment(const char *mntpnt, const char *devname, bool read)
 {
 	struct statx stx = { };
 	struct stat st;
@@ -27,9 +29,17 @@ static int min_dio_alignment(const char *mntpnt, const char *devname)
 	 */
 	fd = open(mntpnt, O_TMPFILE | O_RDWR | O_EXCL, 0600);
 	if (fd >= 0 &&
-	    xfstests_statx(fd, "", AT_EMPTY_PATH, STATX_DIOALIGN, &stx) == 0 &&
-	    (stx.stx_mask & STATX_DIOALIGN) && stx.stx_dio_offset_align != 0)
-		return stx.stx_dio_offset_align;
+	    xfstests_statx(fd, "", AT_EMPTY_PATH,
+			STATX_DIOALIGN | STATX_DIO_READ_ALIGN, &stx) == 0) {
+		if (read &&
+		    (stx.stx_mask & STATX_DIO_READ_ALIGN) &&
+		    stx.stx_dio_read_offset_align != 0)
+			return stx.stx_dio_read_offset_align;
+
+		if ((stx.stx_mask & STATX_DIOALIGN) &&
+		    stx.stx_dio_offset_align != 0)
+			return stx.stx_dio_offset_align;
+	}
 
 	/*
 	 * If we are on a block device and no explicit aligned is reported, use
@@ -42,9 +52,8 @@ static int min_dio_alignment(const char *mntpnt, const char *devname)
 		if (dev_fd > 0 &&
 		    fstat(dev_fd, &st) == 0 &&
 		    S_ISBLK(st.st_mode) &&
-		    ioctl(dev_fd, BLKSSZGET, &logical_block_size) == 0) {
+		    ioctl(dev_fd, BLKSSZGET, &logical_block_size) == 0)
 			return logical_block_size;
-		}
 	}
 
 	/*
@@ -56,11 +65,25 @@ static int min_dio_alignment(const char *mntpnt, const char *devname)
 
 int main(int argc, char **argv)
 {
-	if (argc != 3) {
-		fprintf(stderr, "usage: %s mountpoint devicename\n", argv[0]);
-		exit(1);
+	bool read = false;
+	int c;
+
+	while ((c = getopt(argc, argv, "r")) != -1) {
+		switch(c) {
+		case 'r':
+			read = 1;
+			break;
+		default:
+			goto usage;
+		}
 	}
 
-	printf("%d\n", min_dio_alignment(argv[1], argv[2]));
+	if (argc - optind != 2)
+		goto usage;
+
+	printf("%d\n", min_dio_alignment(argv[optind], argv[optind + 1], read));
 	exit(0);
+usage:
+	fprintf(stderr, "usage: %s [-r] mountpoint devicename\n", argv[0]);
+	exit(1);
 }
