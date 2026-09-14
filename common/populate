@@ -151,7 +151,7 @@ __populate_create_attr() {
 		echo "# file: ${name}";
 		seq --format "user.%08g=\"abcdefgh\"" 0 "${nr}"
 		echo
-	) | setfattr --restore -
+	) | _setfattr_restore -
 
 	test -z "${missing}" && return
 	seq 1 2 "${nr}" | while read d; do
@@ -200,7 +200,7 @@ __populate_xfs_create_btree_attr() {
 			seq --format "user.%08g=\"abcdefgh\"" "${nr}" "$((nr + incr + 1))"
 			echo "user.v$(printf "%.08d" "$nr")=\"${bigval}\""
 			echo
-		) | setfattr --restore -
+		) | _setfattr_restore -
 	done
 
 	# ... and in the second loop we delete all the remote attrs to

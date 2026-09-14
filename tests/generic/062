@@ -30,12 +30,7 @@ getfattr()
 
 setfattr()
 {
-    # attr >= 2.6.0 (CVE-2026-54371 fix) warns that "setfattr --restore" without
-    # -P/--physical is unsafe because it can traverse symlinks. Older attr does
-    # not accept -P, so just filter the warning to stay version-agnostic.
-    $SETFATTR_PROG $@ 2>&1 | \
-        sed -e '/^Warning: option --restore=file is unsafe without option/d' | \
-        _filter_scratch
+    $SETFATTR_PROG $@ 2>&1 | _filter_scratch
 }
 
 _create_test_bed()
@@ -191,7 +186,7 @@ _create_test_bed
 _extend_test_bed
 
 echo "*** restore everything"
-setfattr -h --restore=$tmp.backup1
+_setfattr_restore "$tmp.backup1" -h 2>&1 | _filter_scratch
 _backup $tmp.backup2
 
 echo "AFTER RESTORE" >>$seqres.full
