@@ -16,7 +16,7 @@ _require_odirect
 _require_thp
 _require_hugepage_fsx
 
-psize=`$here/src/feature -s`
+psize=`$here/src/min_dio_alignment -r $TEST_DIR $TEST_DEV`
 bsize=`$here/src/min_dio_alignment $TEST_DIR $TEST_DEV`
 
 _run_hugepage_fsx -N 10000            -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
