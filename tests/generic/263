@@ -15,7 +15,7 @@ _begin_fstest rw auto quick
 _require_test
 _require_odirect
 
-psize=`$here/src/feature -s`
+psize=`$here/src/min_dio_alignment -r $TEST_DIR $TEST_DEV`
 bsize=`$here/src/min_dio_alignment $TEST_DIR $TEST_DEV`
 
 run_fsx -N 10000  -o 8192   -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z
