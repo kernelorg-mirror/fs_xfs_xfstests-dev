@@ -449,8 +449,10 @@ _btrfs_kill_stress_defrag_pid()
 _btrfs_stress_remount_compress()
 {
 	local btrfs_mnt=$1
+	local algo_list=("no" $(_btrfs_compression_algos))
+
 	while true; do
-		for algo in no zlib lzo; do
+		for algo in ${algo_list[@]}; do
 			_mount -o remount,compress=$algo $btrfs_mnt
 		done
 	done
