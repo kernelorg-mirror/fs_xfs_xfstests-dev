@@ -1,0 +1,46 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
+#
+# FS QA Test 354
+#
+# Verify that we don't create compressed inline extents when the compressed
+# data size is not smaller than the uncompressed data size.
+#
+. ./common/preamble
+_begin_fstest auto quick compress
+
+. ./common/filter
+
+_fixed_by_kernel_commit xxxxxxxxxxxx \
+	"btrfs: fix creation of compressed inline extents that don't save space"
+
+_require_scratch
+_require_btrfs_command inspect-internal dump-tree
+
+algo_list=($(_btrfs_compression_algos))
+for algo in ${algo_list[@]}; do
+	_scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
+	_scratch_mount "-o compress=$algo"
+
+	echo 'a file with test content' > $SCRATCH_MNT/foobar
+	_scratch_unmount
+	_check_scratch_fs
+
+	$BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
+		tee -a $seqres.full | \
+		$AWK_PROG -v algo="$algo" '
+		  /inline extent/ {
+			for (i = 1; i < NF; i++) {
+			      if ($i ~ /^size$/)
+				 extent_size = $(i + 1)
+			      if ($i ~ /^ram_bytes$/)
+			         ram_size = $(i + 1)
+			}
+			if (extent_size > ram_size)
+			   printf "inline extent size (%d) greater than ram_size (%d) for algo %s\n", extent_size, ram_size, algo
+		  }'
+done
+
+echo "Silence is golden"
+_exit 0
