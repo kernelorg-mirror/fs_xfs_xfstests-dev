@@ -27,6 +27,8 @@ _cleanup()
 
 . ./common/filter
 
+_require_scratch
+
 fsv_file_size=10000000
 nproc_enabler=$((4 * LOAD_FACTOR))
 nproc_reader=$((6 * LOAD_FACTOR))

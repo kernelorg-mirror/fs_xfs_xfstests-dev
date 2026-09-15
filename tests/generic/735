@@ -20,6 +20,7 @@ if [[ "$FSTYP" =~ ext[0-9]+ ]]; then
 fi
 
 _require_odirect
+_require_scratch
 _require_xfs_io_command "falloc"
 _require_xfs_io_command "finsert"
 _require_max_file_range_blocks $(( (1 << 32) - 1 ))
