@@ -28,6 +28,7 @@ _fixed_by_kernel_commit 2ce543f47843 \
 # which is further fixed by
 _fixed_by_kernel_commit d5b81ced74af \
 	"btrfs: zoned: fix API misuse of zone finish waiting"
+_require_scratch
 _require_zoned_device "$SCRATCH_DEV"
 _require_limited_active_zones "$SCRATCH_DEV"
 
