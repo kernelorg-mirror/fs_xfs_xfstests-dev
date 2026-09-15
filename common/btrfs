@@ -1055,6 +1055,7 @@ _require_btrfs_iouring_encoded_read()
 	local tmpfile
 	local ret
 
+	_require_scratch
 	_require_command src/btrfs_encoded_read
 
 	_scratch_mkfs &> /dev/null
