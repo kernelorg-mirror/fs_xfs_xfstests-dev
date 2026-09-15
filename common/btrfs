@@ -414,16 +414,17 @@ _btrfs_stress_defrag()
 {
 	local btrfs_mnt=$1
 	local compress=$2
+	local algo_list=($(_btrfs_compression_algos))
 
 	while true; do
 		if [ "$compress" == "nocompress" ]; then
 			find $btrfs_mnt \( -type f -o -type d \) -exec \
 			$BTRFS_UTIL_PROG filesystem defrag {} \;
 		else
-			find $btrfs_mnt \( -type f -o -type d \) -exec \
-			$BTRFS_UTIL_PROG filesystem defrag -clzo {} \;
-			find $btrfs_mnt \( -type f -o -type d \) -exec \
-			$BTRFS_UTIL_PROG filesystem defrag -czlib {} \;
+			for algo in ${algo_list[@]}; do
+				find $btrfs_mnt \( -type f -o -type d \) -exec \
+				     $BTRFS_UTIL_PROG filesystem defrag -c$algo {} \;
+			done
 		fi
 	done
 }
