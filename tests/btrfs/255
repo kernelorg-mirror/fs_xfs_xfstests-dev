@@ -12,6 +12,15 @@
 . ./common/preamble
 _begin_fstest auto qgroup balance
 
+_cleanup()
+{
+	cd /
+	rm -rf $tmp.*
+	if [ -n "$balance_pid" ]; then
+		_btrfs_kill_stress_balance_pid $balance_pid
+	fi
+}
+
 _require_scratch
 
 _scratch_mkfs >> $seqres.full 2>&1
@@ -39,8 +48,6 @@ for ((i = 0; i < 20; i++)); do
 	$BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
 	$BTRFS_UTIL_PROG quota disable $SCRATCH_MNT
 done
-
-_btrfs_kill_stress_balance_pid $balance_pid
 
 echo "Silence is golden"
 status=0
