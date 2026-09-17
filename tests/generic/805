@@ -1,0 +1,68 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2026 LINBIT HA-Solutions GmbH.  All Rights Reserved.
+#
+# FS QA Test No. 805
+#
+# Test that a device-mapper suspend/resume cycle on a filesystem that is
+# already frozen by userspace does not leak a block device freeze reference.
+#
+# On buggy kernels thaw_super() returns -EINVAL for a nested thaw although
+# it dropped its freeze reference, so bdev_thaw() leaves bd_fsfreeze_count
+# elevated. Once the filesystem is unmounted, the block device can never
+# be mounted again:
+#
+#     dm-1: Can't mount, blockdev is frozen
+#
+. ./common/preamble
+_begin_fstest auto quick freeze mount
+
+_fixed_by_kernel_commit fe967191e585 \
+	"fs: don't return -EINVAL for successful nested thaw"
+
+# Override the default cleanup function.
+_cleanup()
+{
+	xfs_freeze -u $SCRATCH_MNT 2>/dev/null
+	$DMSETUP_PROG resume $lvdev >> $seqres.full 2>&1
+	_unmount -q $SCRATCH_MNT
+	_dmsetup_remove $node
+	cd /
+	rm -f $tmp.*
+}
+
+_require_scratch
+_require_dm_target linear
+_require_freeze
+
+echo "Silence is golden"
+
+size=$((256 * 1024 * 1024))
+size_in_sector=$((size / 512))
+_scratch_mkfs_sized $size >> $seqres.full 2>&1
+
+node=$seq-test
+lvdev=/dev/mapper/$node
+table="0 $size_in_sector linear $SCRATCH_DEV 0"
+_dmsetup_create $node --table "$table" || \
+	_fail "failed to create dm device"
+
+_mount $lvdev $SCRATCH_MNT || _fail "failed to mount dm device"
+
+# Freeze the filesystem from userspace first, then nest a block device
+# initiated freeze/thaw cycle inside it via dm suspend/resume.
+xfs_freeze -f $SCRATCH_MNT || _fail "failed to freeze filesystem"
+$DMSETUP_PROG suspend $lvdev >> $seqres.full 2>&1 || \
+	_fail "failed to suspend dm device"
+$DMSETUP_PROG resume $lvdev >> $seqres.full 2>&1 || \
+	_fail "failed to resume dm device"
+xfs_freeze -u $SCRATCH_MNT || _fail "failed to unfreeze filesystem"
+
+# On buggy kernels the resume leaked a block device freeze reference,
+# and the device cannot be mounted again once unmounted.
+_unmount $SCRATCH_MNT
+_mount $lvdev $SCRATCH_MNT || \
+	_fail "failed to mount dm device after nested freeze/thaw"
+_unmount $SCRATCH_MNT
+
+_exit 0
