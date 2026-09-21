@@ -15,6 +15,7 @@ _begin_fstest auto quick
 . ./common/attr
 
 _require_scratch
+_require_scratch_overlay_features uuid
 
 _scratch_mkfs >>$seqres.full 2>&1
 
@@ -37,8 +38,7 @@ lower_fsid=$(stat -f -c '%i' $lowerdir)
 	echo "lower fs and upper fs fsid differ"
 
 # Test legacy behavior - ovl fsid inherited from upper fs
-_overlay_scratch_mount_dirs $lowerdir $upperdir $workdir -o uuid=null 2>/dev/null || \
-	_notrun "Overlayfs does not support unique fsid feature"
+_overlay_scratch_mount_dirs $lowerdir $upperdir $workdir -o uuid=null
 
 # Lookup of test_dir marks upper root as "impure", so following (uuid=auto) mounts
 # will NOT behave as first time mount of a new overlayfs
