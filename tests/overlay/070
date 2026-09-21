@@ -41,7 +41,7 @@ _require_test_program "t_dir_type"
 _require_command "$FLOCK_PROG" "flock"
 # We need to require all features together, because nfs_export cannot
 # be enabled when index is disabled
-_require_scratch_overlay_features index nfs_export redirect_dir
+_require_scratch_overlay_features index nfs_export redirect_dir xino
 _require_loop
 
 lower=$OVL_BASE_SCRATCH_MNT/$OVL_LOWER
@@ -83,10 +83,7 @@ mount_dirs()
 	# overlayfs to indicate the layer. Let's just assume that this is true for all
 	# tested filesystems and if we are wrong, the test may fail.
 	_overlay_mount_dirs $SCRATCH_MNT $upper2 $work2 overlay2 $mnt2 \
-		-o "redirect_dir=on,index=on,xino=on" || \
-		_notrun "cannot mount nested overlay with xino=on option"
-	_fs_options overlay2 | grep -q "xino=on" || \
-		_notrun "cannot enable xino feature on nested overlay"
+		-o "redirect_dir=on,index=on,xino=on"
 }
 
 # Unmount the nested overlay mount and check underlying overlay layers

@@ -33,6 +33,7 @@ _require_test_program "af_unix"
 _require_test_program "t_dir_type"
 # Require redirect_dir for renaming a merge directory
 _require_scratch_feature redirect_dir
+_require_scratch_overlay_features xino
 
 lowerdir=$OVL_BASE_TEST_DIR/$seq-ovl-lower
 rm -rf $lowerdir
@@ -57,10 +58,7 @@ workdir=$OVL_BASE_SCRATCH_MNT/$OVL_WORK
 # not use bit 63 in inode number of the test files, because bit 63 is used by
 # overlayfs to indicate the layer. Let's just assume that this is true for all
 # tested filesystems and if we are wrong, the test may fail.
-_overlay_scratch_mount_dirs $lowerdir $upperdir $workdir -o redirect_dir=on,xino=on || \
-	_notrun "cannot mount overlay with xino=on option"
-_fs_options $SCRATCH_DEV | grep -q "xino=on" || \
-	_notrun "cannot enable xino feature"
+_overlay_scratch_mount_dirs $lowerdir $upperdir $workdir -o redirect_dir=on,xino=on
 
 FILES="dir file symlink chrdev blkdev fifo socket"
 

@@ -26,6 +26,7 @@ _require_scratch_nocheck
 _require_test
 _require_scratch_feature index
 _require_test_program "t_dir_type"
+_require_scratch_overlay_features xino
 
 # Record inode numbers in format <ino> <nlink>
 function record_ino_nlink()
@@ -73,10 +74,7 @@ workdir=$OVL_BASE_SCRATCH_MNT/$OVL_WORK
 # not use bit 63 in inode number of the test files, because bit 63 is used by
 # overlayfs to indicate the layer. Let's just assume that this is true for all
 # tested filesystems and if we are wrong, the test may fail.
-_overlay_scratch_mount_dirs $lowerdir $upperdir $workdir -o index=on,xino=on || \
-	_notrun "cannot mount overlay with xino=on option"
-_fs_options $SCRATCH_DEV | grep -q "xino=on" || \
-	_notrun "cannot enable xino feature"
+_overlay_scratch_mount_dirs $lowerdir $upperdir $workdir -o index=on,xino=on
 
 rm -f $tmp.*
 

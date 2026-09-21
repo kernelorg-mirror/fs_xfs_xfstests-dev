@@ -25,6 +25,7 @@ _fixed_by_kernel_commit 9c6d8f13e9da \
 # them explicity after test.
 _require_scratch_nocheck
 _require_test
+_require_scratch_overlay_features xino
 
 # Lower is on test partition
 lower=$OVL_BASE_TEST_DIR/$OVL_LOWER-$seq
@@ -47,8 +48,7 @@ echo wrong > $realfile
 # Mount an overlay on $SCRATCH_MNT with lower layer on test partition
 # and middle and upper layer on scratch partition.
 # Disable xino, so not all overlay inodes are on the same st_dev.
-_overlay_scratch_mount_dirs $middle:$lower $upper $work -o xino=off || \
-	_notrun "cannot mount overlay with xino=off option"
+_overlay_scratch_mount_dirs $middle:$lower $upper $work -o xino=off
 
 stat $realfile >>$seqres.full
 stat $testfile >>$seqres.full
