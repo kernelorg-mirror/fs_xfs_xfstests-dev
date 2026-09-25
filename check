@@ -1050,7 +1050,7 @@ function run_section()
 		mkdir -p $RESULT_DIR
 		rm -f ${RESULT_DIR}/require_scratch*
 		rm -f ${RESULT_DIR}/require_test*
-		rm -f $seqres.out.bad $seqres.hints
+		rm -f $seqres.out.bad $seqres.hints $seqres.out.good
 
 		# check if we really should run it
 		if _expunge_test $seqnum; then
@@ -1181,7 +1181,11 @@ function run_section()
 		$timestamp && _timestamp
 		stop=`_wallclock`
 
-		if [ ! -f $seq.out ]; then
+		local out=$here/$seq.out
+		if [ -f $seqres.out.good ]; then
+			out=$seqres.out.good
+		fi
+		if [ ! -f $out ]; then
 			_dump_err "no qualified output"
 			tc_status="fail"
 			rm -f "$seqres.mountfail?"
@@ -1193,7 +1197,7 @@ function run_section()
 		# from `foo' to 'foo'. Filter old versions to match the new
 		# version.
 		sed -i "s/\`/\'/g" $tmp.out
-		if diff $seq.out $tmp.out >/dev/null 2>&1 ; then
+		if diff $out $tmp.out >/dev/null 2>&1 ; then
 			if [ "$tc_status" != "fail" ]; then
 				echo "$seqnum `expr $stop - $start`" >>$tmp.time
 				echo -n " `expr $stop - $start`s"
@@ -1202,13 +1206,13 @@ function run_section()
 		else
 			_dump_err "- output mismatch (see $seqres.out.bad)"
 			mv $tmp.out $seqres.out.bad
-			$diff $seq.out $seqres.out.bad | {
+			$diff $out $seqres.out.bad | {
 			if test "$DIFF_LENGTH" -le 0; then
 				cat
 			else
 				head -n "$DIFF_LENGTH"
 				echo "..."
-				echo "(Run '$diff $here/$seq.out $seqres.out.bad'" \
+				echo "(Run '$diff $out $seqres.out.bad'" \
 					" to see the entire diff)"
 			fi; } | sed -e 's/^\(.\)/    \1/'
 			tc_status="fail"
