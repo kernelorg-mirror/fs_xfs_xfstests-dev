@@ -5,7 +5,6 @@
 # FS QA Test No. 071
 #
 # Exercise IO at large file offsets.
-seqfull=$0
 . ./common/preamble
 _begin_fstest rw auto
 
@@ -22,11 +21,11 @@ _cleanup()
 
 bitsperlong=`$here/src/feature -w`
 # link correct .out file
-rm -f $seqfull.out
+seqfull=$0
 if [ "$bitsperlong" -eq 32 ]; then
-	ln -s $seq.out.32 $seqfull.out
+	_link_out_file "32"
 else
-	ln -s $seq.out.64 $seqfull.out
+	_link_out_file ""
 fi
 
 _filter_io()
