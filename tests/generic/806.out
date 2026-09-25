@@ -1,0 +1,11 @@
+QA output created by 806
+xattrs before:
+# file: SCRATCH_MNT/testfile
+user.WvG1c1Td="qwerty"
+user.foobar="123"
+
+xattrs after:
+# file: SCRATCH_MNT/testfile
+user.WvG1c1Td="qwerty"
+user.foobar="abcdefghijklmnopqrstuvwxyz"
+

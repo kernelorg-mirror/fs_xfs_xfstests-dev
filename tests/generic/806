@@ -1,0 +1,43 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
+#
+# FS QA Test 806
+#
+# Test replacing a xattr's value with a larger value.
+#
+. ./common/preamble
+_begin_fstest auto quick metadata attr
+
+. ./common/filter
+. ./common/attr
+
+_require_scratch
+_require_attrs
+
+_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
+   "btrfs: fix xattr replace when multiple xattrs are packed in the same item"
+
+_scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
+_scratch_mount
+
+touch $SCRATCH_MNT/testfile
+
+# Add two xattrs that, on btrfs, have the same hash (crc32c) for their name
+# and therefore are packed into the same btrfs_dir_item.
+$SETFATTR_PROG -n user.foobar -v 123 $SCRATCH_MNT/testfile
+$SETFATTR_PROG -n user.WvG1c1Td -v qwerty $SCRATCH_MNT/testfile
+
+# Verify the xattrs are present.
+echo "xattrs before:"
+_getfattr --absolute-names --dump $SCRATCH_MNT/testfile | _filter_scratch
+
+# Now replace the value of the foobar xattr with a significantly larger value.
+$SETFATTR_PROG -n user.foobar -v abcdefghijklmnopqrstuvwxyz $SCRATCH_MNT/testfile
+
+# Check the xattrs have the expected values.
+echo "xattrs after:"
+_getfattr --absolute-names --dump $SCRATCH_MNT/testfile | _filter_scratch
+
+# success, all done
+_exit 0
