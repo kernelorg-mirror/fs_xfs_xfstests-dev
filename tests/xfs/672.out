@@ -1,0 +1,7 @@
+QA output created by 672
+Format and mount
+Create reflinked file with several CoW extents
+Inject wb_cow_convert_error
+Trigger writeback with CoW conversion forced to fail
+Remount
+Silence is golden

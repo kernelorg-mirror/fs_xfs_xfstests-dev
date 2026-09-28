@@ -1,0 +1,68 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2026 Andrea Parri.  All Rights Reserved.
+#
+# FS QA Test No. 672
+#
+# Regression test for a failed ->writeback_submit() call leaving a stale
+# wpc->wb_ctx behind.  iomap_writepages() then resubmits whatever
+# wpc->wb_ctx points to, i.e. the ioend that ->writeback_submit() already
+# completed with an error.  For XFS the second bio_endio() lands back in
+# xfs_end_bio(), which list_add_tail()s the already-linked ioend into
+# ip->i_ioend_list a second time, corrupting the list.
+#
+# The only in-tree way for XFS's ->writeback_submit() to fail is a
+# failing xfs_reflink_convert_cow(), so this uses the
+# wb_cow_convert_error error tag to force that on a reflinked file whose
+# CoW extents are dirtied in several widely separated ranges, so that a
+# single writepages() call has to submit more than one ioend.
+#
+. ./common/preamble
+_begin_fstest auto quick clone
+
+# Import common functions.
+. ./common/filter
+. ./common/reflink
+. ./common/inject
+
+_fixed_by_kernel_commit XXXXXXXXXXXX \
+	"iomap: don't resubmit an ioend after ->writeback_submit() failed"
+
+_require_cp_reflink
+_require_scratch_reflink
+_require_xfs_io_error_injection "wb_cow_convert_error"
+_require_kernel_config CONFIG_LIST_HARDENED
+
+blksz=65536
+nr=8
+sz=$((blksz * nr * 2))
+
+echo "Format and mount"
+_scratch_mkfs >> $seqres.full 2>&1
+_scratch_mount
+
+echo "Create reflinked file with several CoW extents"
+_pwrite_byte 0x58 0 $sz $SCRATCH_MNT/file1 >> $seqres.full
+_scratch_sync
+_cp_reflink $SCRATCH_MNT/file1 $SCRATCH_MNT/file2
+
+# Dirty several widely separated ranges of file2's CoW extents so that a
+# single writepages() call has to submit more than one ioend.
+for ((off = 0; off < (blksz * nr * 2); off += (blksz * 2))); do
+	_pwrite_byte 0x59 $off $blksz $SCRATCH_MNT/file2 >> $seqres.full
+done
+
+echo "Inject wb_cow_convert_error"
+_scratch_inject_error "wb_cow_convert_error"
+
+echo "Trigger writeback with CoW conversion forced to fail"
+_scratch_sync
+
+echo "Remount"
+_scratch_cycle_mount
+
+echo "Silence is golden"
+
+# success, all done
+status=0
+exit
